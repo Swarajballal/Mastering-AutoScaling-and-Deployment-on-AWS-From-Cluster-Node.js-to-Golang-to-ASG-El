@@ -19,7 +19,7 @@
 Node.js => single threaded </br>
 Golang/Java => multi threaded
 
-Node.js or Python are not thar powerful you cant use all the processing power of a machine. </br>
+Node.js or Python are not that powerful you cant use all the processing power of a machine. </br>
 
 Golang/Java/Rust are multi threaded languages. </br>
 
