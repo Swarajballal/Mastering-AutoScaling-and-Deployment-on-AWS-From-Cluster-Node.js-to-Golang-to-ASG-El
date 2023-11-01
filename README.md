@@ -14,7 +14,7 @@
 3. AWS way of doing LB/autoscaling. </br>
 4. Understanding Backpacks deployment process. </br>
 
-### Single threaded bs multi threaded languages
+### Single threaded Vs multi threaded languages
 
 Node.js => single threaded </br>
 Golang/Java => multi threaded
