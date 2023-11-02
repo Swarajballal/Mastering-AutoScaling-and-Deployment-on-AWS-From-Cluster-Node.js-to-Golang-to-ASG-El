@@ -1,4 +1,5 @@
 # Mastering-AutoScaling-and-Deployment-on-AWS-From-Cluster-Node.js-to-Golang-to-Auto-scaling-groups-Elastic-BeanStalk
+
 ## AutoScaling Backends
 
 ### Making Node Multi core
@@ -334,3 +335,7 @@ It doesn't use express hence it has fetch handler and Scheduled handler. fetch i
 it can also write test, typescript, package.json, cd into folder and run npm run start you can use hono which is similar to express and cleaner then the default one so use hono</br>
 2. To deploy use wrangler login </br>
 3. npm run deploy </br>
+
+Use itty-router for routing in cloudflare workers. </br>
+
+Websocket should not be used in serverless architecture. since it needs a persistent connection and serverless architecture is not meant for that it randomly shuts and starts instanceson demand </br>
