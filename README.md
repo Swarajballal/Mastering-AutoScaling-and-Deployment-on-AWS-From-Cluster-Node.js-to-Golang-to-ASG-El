@@ -1,6 +1,5 @@
 # Mastering-AutoScaling-and-Deployment-on-AWS-From-Cluster-Node.js-to-Golang-to-Auto-scaling-groups-Elastic-BeanStalk
-
-### AutoScaling Backends
+## AutoScaling Backends
 
 ### Making Node Multi core
 ### Deploying to aws ec2 instances
@@ -14,12 +13,12 @@
 3. AWS way of doing LB/autoscaling. </br>
 4. Understanding Backpacks deployment process. </br>
 
-### Single threaded Vs multi threaded languages
+### Single threaded bs multi threaded languages
 
 Node.js => single threaded </br>
 Golang/Java => multi threaded
 
-Node.js or Python are not that powerful you cant use all the processing power of a machine. </br>
+Node.js or Python are not thar powerful you cant use all the processing power of a machine. </br>
 
 Golang/Java/Rust are multi threaded languages. </br>
 
@@ -190,3 +189,148 @@ To debug EWS we use logs on Logs stash, loki, data dog etc to aggregate logs for
 There is not point of doing clustering in next js since it does edge caching which puts app in multiple locations. </br>
 
 Try to scale horizontally as much as possible. that means more number of smaller machines. instead of less number of bigger machines. for cost efficency also </br>
+
+### Elastic Beanstalk using non CI/CD method
+
+  1. Create environment 
+  2. Environment Tier
+     a. Web server environment : If you are running a http server </br>
+     b. Worker environment : anything that does not need to exposed on the internet (video transcoder etc) </br>
+
+We will go with web server environment. </br>
+  3. Application name
+  4. Application code
+     a. Upload your code </br>
+     b. Upload your code from s3 </br>
+     c. Sample application </br>
+
+![Application name and environment creation](image-8.png)
+
+</br>
+We can directly upload our Node js code, as of now will select sample application. </br>
+
+  5. Presets
+     configuration presets  </br>
+     a. Single instances (free tier) </br>
+there are many more select according to use case and on demand.  </br>
+  6. Platform tyoe
+     a. Platform: Node js or any according to your requirement </br>
+     b. Platform branch: 18 on 64bit amazon Linux 2023  default</br>
+     c. Platform version: 6.0.2  default</br>
+
+  ![platform config](image-9.png)
+  </br>
+
+  ![Presets](image-10.png)
+  </br>
+  Click on Next </br></br>
+  7. Configure service access : here you add additional info like key-pair do you want to ssh into this machines in EC2 key pair
+     here either you have an exsisting service role or you can create a new one. on new you will get aws-elasticbeanstalk-service-role</br>
+     Same for EC2 instance profile either you have exsisting one else you have to create a new one</br></br>
+     Steps to create a new one :</br></br>
+     ![create a new ec2 profile](image-11.png)
+     </br></br>
+     1. Go to IAM dashboard and In the navigation pane, choose Roles, then select Create role. </br>
+     2. Under Select type of trusted entity, choose AWS service. </br>
+     3. In the list of services, choose EC2, and then choose Next: Permissions. </br>
+
+  ![creating a new EC2 profile](image-14.png)  </br></br>
+     4. On the Attach permissions policies page, select the policy that grants the permissions that you want to delegate to the EC2 instances, and then choose Next: Tags. here i jsut want elastic beanstalk permisison administrator level you can choose according your requirement.</br>
+   
+  ![permission page](image-15.png)
+     5. Give a name to the role and click on create role. </br>
+  
+  ![Adding name to role](image-16.png)   </br></br>
+  8. Now you will have an exsisiting service role and EC2 instance profile. </br>
+
+  ![service access complete](image-17.png)
+
+  9. rest setting like Set up networking, database, and tags you can set it up but for a simple node js app can keep default. even for complex apps even Configure instance traffic and scaling and Configure updates, monitoring, and logging can be kept default they mean what to happen when should instance increase or decrease other logics any which ways auto scalling will tweak these parameter according to load but if you want to tell it upfront feel free to do so. </br>
+   
+  10.  Review it and click on create submit. </br>
+
+  In your EC2 dashboard you will see a new instance running and also in auto scaling group you will see a new group created. so all manual work of manual ASG donw using Elastic beanstalk you can go to elastic beanstalk dashboard see an instance and there is a internet facing url created and when you click on it you will see the same application of node js successfully created since we used sample application during process and didn't upload our own code you can do that too even the dashboard of elasticbean has an option to upload code directly by just uploading your desired folder but not the rigth way you should do it using CI/CD Pipeline.</br>
+  Things to remember while directly uploading: </br>
+    1. Elastic beanStalk in case of Golang you need to give just the binary. </br>
+    2. Incase of Docker just the Dokcerfile. </br>
+    3. Incase of typescript Node js it expects you to convert it into typescript to javascript and  it will run the command like npm run start or node dist/index.js it doesn't understand typescript so even in CI/CD we have to first build the project and only upload js code. it expects you to upload a zip file
+    4. Don't just got to folder right click and compress archive or zip that is wrong because elastic beanstalk will unarchive or unzip it and will try to find dist folder but it won't be able to do so because after unzip it will see the same folder name again and in that folder is dist so instead the correct way is to go into the folder select all the files CTRL+A dist etc folder and then compress so that when elastic bean unzips it it will get access to files this time and not a folder with project name. the reason why this happens because elastic bean searches for a standard files in the project like in node js it looks for app.js file, index.js file, build/index.js file, build/app.js file, dist/index.js file and dist/app.js file so after compressing you can upload the zip file.</br>
+    5. How would it know which port to run in on ? </br>
+       Elastic bean stalk gives you a port as an environment variable. also they have a deafult port 5000. so you can in your code change you port to 5000 and listen on 5000 else you can edit this default port in elasticbeankstalk dashboard under configuration next to go to environment. const PORT = process.env.PORT || 5000 </br> 
+  </br>
+![final working](image-18.png) </br>
+if you are using single instance environment you won't see a load balancer </br></br>
+![Alt text](image-19.png)
+Apart from this you can also use fly.io and render.com to deploy your app. </br>
+
+## Elastic Beanstalk using CI/CD method
+
+Docker is the best way to deploy your app to AWS even on Elastic Beanstalk avoid using raw node js or other since maybe you don't want to use this in future instead you decide to shift docker needs docker image to build and image that is more easy to containerize and push images. so always containerize it and then select docker and deploy using docker to elastic bean stalk there would be a extra step you hvae to first build and the image and push the docker image somewhere and pull image on elastic beanstalk and redeplot to elasticbeanstalk</br>
+
+### Non containerized CI/CD elastic beanstalk 
+
+```yaml
+
+name: Deploy backend-api
+on:
+  push:               
+    branches:
+      - master         // any time a push on master branch 
+      
+jobs:
+  deploy: 
+    runs-on: ubuntu-latest         // deploy on an ubuntu machine
+    steps:
+      - uses: actions/checkout@v2   // first checkout the code
+
+      - name: Create zip
+        run: "cd part-5-multi-core-eb && npm install && npm run build && zip -r deploy.zip *"     // create a zip of proj named deploy.zip
+ 
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v20    // deploy to elastic bean stalk aws commands are pre written by someone else we just need to put our own secrets that are AWS_EB_ACCESS_KEY_ID and AWS_EB_SECRET_ACCESS_KEY below
+        with:
+          aws_access_key: ${{ secrets.AWS_EB_ACCESS_KEY_ID }}    // secrets are stored in github secrets
+          aws_secret_key: ${{ secrets.AWS_EB_SECRET_ACCESS_KEY }}  // secrets are stored in github secrets
+          application_name: backend-api   // it also needs name of application that has to be deployed
+          environment_name: backend-api-env   // the environment name in which you want to redeploy on.
+          version_label: ${{ github.sha }}   // we deploy code manually in elastic bean stalk so we need to give a version label so that we can track which version is deployed which is the sha or hash for the commit we have
+          region: us-west-1   // region in which you want to deploy
+          deployment_package: ./part-5-multi-core-eb/deploy.zip   // this is important the package or zip that it will deploy to elastic bean stalk
+
+```
+
+To get these AWS_EB_ACCESS_KEY_ID and AWS_EB_SECRET_ACCESS_KEY you have to go to your account and create a scoped accesss key and secret key for elastic bean stalk , here scoped means it will only have access to elastic bean stalk and not other services. </br>
+
+
+## Serverless Architecture
+
+AWS,GCP etc provides serverless architecture. Which means you have to give them the code they will do the rest configuration, scaling which server's to use etc. They charge on per request basis unlike instances where you have to pay for the whole instances on a monthly basis. Its initially free and good for student projects since we don't get much traffic and when no traffic is there we don't have to pay anything and its turn on and off on demand so pay only on demand/request basis. </br>
+
+### Problems with serverless architecture
+1. Price scales very much when traffic increases after a certain point. It would be better to pay for 3 instances instead of paying for 30000/seconds requests so eventually companies shifts to server architecture </br>
+2. Cold starts: If no one is hitting you serverless function for a long time then it will go to sleep and when someone hits it again it will take time to wake up and then respond to the request. </br>
+
+### Interview Question
+
+How to solve cold start problem in serverless architecture ? </br>
+1. Maintaining a warm server swarms atleast keep a small server always running charges around 20$ per month. </br>
+2. Keep pinging the server every 5 minutes so that it doesn't go to sleep.(Ugly way) </br>
+   New relic or Data dog can be used to ping the server. </br>
+
+AWS has a service called lambda which is serverless architecture. </br>
+Cloudflare has a service called workers which is serverless architecture also provides DDOS(Denial of service)(when bots start spaming) attacks and provides protection they too do edge caching like if i hit from a india they will send cached data from india same for other countries. they provide a CLI to interact with it called wrangler </br>
+GCP has a service called Firebase functions which is serverless architecture. </br>
+
+Serverless are not just for compute but also for database(serverless database), storage etc. </br>
+Serverless means you don't have to manage the server its the responsibility of the cloud provider hence serverless but always there is a server created for incoming requests </br>
+
+Very basic usage should be done using serverless architecture. </br>
+
+Steps to create worker using cloudflare and wrangler CLI </br>
+https://developers.cloudflare.com/workers/
+
+1. npx wrangler init app-name </br>
+It doesn't use express hence it has fetch handler and Scheduled handler. fetch is the simplest one a backend server
+it can also write test, typescript, package.json, cd into folder and run npm run start you can use hono which is similar to express and cleaner then the default one so use hono</br>
+2. To deploy use wrangler login </br>
+3. npm run deploy </br>
